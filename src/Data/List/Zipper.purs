@@ -3,19 +3,21 @@ module Data.List.Zipper
     , up, down
     , beginning, end
     , fromFoldable, toUnfoldable
+    , MaybeZipper(..)
+    , getMaybeZipper
     ) where
 
 import Prelude
 
-import Control.Comonad      (Comonad, extract)
-import Control.Extend       (Extend, extend)
-import Data.List            (List(..), head, reverse, snoc, tail, toList)
-import Data.Foldable        (Foldable, foldl, foldMap, foldr, intercalate)
+import Control.Comonad      (class Comonad)
+import Control.Extend       (class Extend)
+import Data.List            (List(..), tail, head, reverse, toList)
+import Data.Foldable        (class Foldable, foldl, foldMap, foldr, intercalate)
 import Data.Functor.Compose (Compose(..))
 import Data.Maybe           (Maybe(..), maybe)
-import Data.Traversable     (Traversable, sequence, traverse)
+import Data.Traversable     (class Traversable, traverse)
 import Data.Tuple           (Tuple(Tuple))
-import Data.Unfoldable      (Unfoldable, unfoldr)
+import Data.Unfoldable      (class Unfoldable, unfoldr)
 
 data Zipper a = Zipper (List a) a (List a)
 
@@ -129,10 +131,16 @@ instance traversableZipper :: Traversable Zipper where
     -- sequence :: forall a m. (Applicative m) => (Zipper (m a)) -> m (Zipper a)
     sequence = traverse id
 
+-- | The composition of Maybe and a Zipper. Primarily useful for the
+-- | `Unfoldable` instance.
 newtype MaybeZipper a = MaybeZipper (Compose Maybe Zipper a)
 
+-- | Unwraps a `MaybeZipper` value.
 getMaybeZipper :: forall a. MaybeZipper a -> Compose Maybe Zipper a
 getMaybeZipper (MaybeZipper a) = a
+
+instance functorMaybeZipper :: Functor MaybeZipper where
+    map f = MaybeZipper <<< map f <<< getMaybeZipper
 
 instance unfoldableMaybeZipper :: Unfoldable MaybeZipper where
     unfoldr f x =
