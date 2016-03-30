@@ -129,8 +129,16 @@ instance traversableZipper :: Traversable Zipper where
     -- sequence :: forall a m. (Applicative m) => (Zipper (m a)) -> m (Zipper a)
     sequence = traverse id
 
-instance unfoldableMaybeZipper :: Unfoldable (Compose Maybe Zipper) where
-    unfoldr f x = Compose $ Zipper Nil <$> head asList <*> tail asList
+newtype MaybeZipper a = MaybeZipper (Compose Maybe Zipper a)
+
+getMaybeZipper :: forall a. MaybeZipper a -> Compose Maybe Zipper a
+getMaybeZipper (MaybeZipper a) = a
+
+instance unfoldableMaybeZipper :: Unfoldable MaybeZipper where
+    unfoldr f x =
+        MaybeZipper 
+            $ Compose 
+                $ Zipper Nil <$> head asList <*> tail asList
       where asList = unfoldr f x
 
 -------------------------------------------------------------------------------
